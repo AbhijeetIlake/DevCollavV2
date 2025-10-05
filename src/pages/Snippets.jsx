@@ -15,6 +15,8 @@ function Snippets() {
   const [editingSnippet, setEditingSnippet] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [showOutput, setShowOutput] = useState(false);
+  const [codeOutput, setCodeOutput] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,7 +27,7 @@ function Snippets() {
   });
 
   useEffect(() => {
-    fetchSnippets();
+    if (user) fetchSnippets();
   }, [user]);
 
   useEffect(() => {
@@ -110,7 +112,7 @@ function Snippets() {
         code: snippet.code,
         lang: snippet.lang,
         isPublic: snippet.isPublic,
-        tags: snippet.tags
+        tags: snippet.tags || []
       });
     } else {
       setEditingSnippet(null);
@@ -123,6 +125,8 @@ function Snippets() {
         tags: []
       });
     }
+    setShowOutput(false);
+    setCodeOutput('');
     setShowModal(true);
   };
 
@@ -137,7 +141,7 @@ function Snippets() {
     setShowOutput(true);
     setCodeOutput('Running code...');
 
-    if (formData.language !== 'javascript') {
+    if (formData.lang !== 'javascript') {
       setCodeOutput('⚠️ Code execution is currently only supported for JavaScript.');
       return;
     }
@@ -146,9 +150,11 @@ function Snippets() {
       const logs = [];
       const originalLog = console.log;
       console.log = (...args) => {
-        logs.push(args.map(arg =>
-          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-        ).join(' '));
+        logs.push(
+          args
+            .map(arg => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)))
+            .join(' ')
+        );
       };
 
       try {
@@ -157,7 +163,8 @@ function Snippets() {
 
         let output = logs.join('\n');
         if (result !== undefined) {
-          output += (output ? '\n\n' : '') + '→ ' + (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result));
+          output += (output ? '\n\n' : '') + '→ ' +
+            (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result));
         }
         setCodeOutput(output || '✓ Code executed successfully (no output)');
       } catch (err) {
@@ -295,8 +302,8 @@ function Snippets() {
                     <label className="label">Language</label>
                     <select
                       className="select"
-                      value={formData.language}
-                      onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                      value={formData.lang}
+                      onChange={(e) => setFormData({ ...formData, lang: e.target.value })}
                     >
                       <option value="javascript">JavaScript</option>
                       <option value="python">Python</option>
@@ -328,7 +335,7 @@ function Snippets() {
                   <div className="editor-container">
                     <Editor
                       height="300px"
-                      language={formData.language}
+                      language={formData.lang}
                       value={formData.code}
                       onChange={(value) => setFormData({ ...formData, code: value || '' })}
                       theme="vs-dark"
@@ -355,7 +362,7 @@ function Snippets() {
                 <button type="button" className="btn btn-outline" onClick={closeModal}>
                   Cancel
                 </button>
-                {formData.language === 'javascript' && (
+                {formData.lang === 'javascript' && (
                   <button type="button" className="btn btn-secondary" onClick={handleRunCode}>
                     ▶ Run Code
                   </button>
