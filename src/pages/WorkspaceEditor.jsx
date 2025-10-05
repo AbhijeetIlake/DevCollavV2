@@ -6,6 +6,8 @@ import { io } from 'socket.io-client';
 import axios from 'axios';
 import './WorkspaceEditor.css';
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 function WorkspaceEditor() {
   const { workspaceId } = useParams();
   const { user } = useUser();
@@ -36,7 +38,7 @@ function WorkspaceEditor() {
 
   const fetchWorkspace = async () => {
     try {
-      const response = await axios.get(`/api/workspaces/${workspaceId}`);
+      const response = await axios.get(`${API_BASE}/api/workspaces/${workspaceId}`);
       setWorkspace(response.data);
     } catch (error) {
       console.error('Error fetching workspace:', error);
@@ -91,7 +93,7 @@ function WorkspaceEditor() {
   const handleSaveSnippet = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/workspaces/${workspaceId}/snippets`, {
+      await axios.post(`${API_BASE}/api/workspaces/${workspaceId}/snippets`, {
         title: snippetTitle,
         code: code,
         language: language
@@ -114,7 +116,7 @@ function WorkspaceEditor() {
   const handleDeleteSnippet = async (snippetId) => {
     if (window.confirm('Are you sure you want to delete this snippet?')) {
       try {
-        await axios.delete(`/api/workspaces/${workspaceId}/snippets/${snippetId}`);
+        await axios.delete(`${API_BASE}/api/workspaces/${workspaceId}/snippets/${snippetId}`);
         fetchWorkspace();
       } catch (error) {
         console.error('Error deleting snippet:', error);

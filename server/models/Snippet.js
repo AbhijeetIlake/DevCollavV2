@@ -20,7 +20,7 @@ const snippetSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  language: {
+  lang: {
     type: String,
     required: true,
     default: 'javascript'

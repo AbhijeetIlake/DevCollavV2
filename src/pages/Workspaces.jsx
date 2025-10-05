@@ -4,8 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Workspaces.css';
 
+const API_BASE = import.meta.env.VITE_API_URL; 
+
 function Workspaces() {
   const { user } = useUser();
+  console.log(user.id);
   const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +24,7 @@ function Workspaces() {
 
   const fetchWorkspaces = async () => {
     try {
-      const response = await axios.get(`/api/workspaces?userId=${user.id}`);
+      const response = await axios.get(`${API_BASE}/api/workspaces?userId=${user.id}`);
       setWorkspaces(response.data);
     } catch (error) {
       console.error('Error fetching workspaces:', error);
@@ -33,7 +36,7 @@ function Workspaces() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/workspaces', {
+      const response = await axios.post(`${API_BASE}/api/workspaces`, {
         ...formData,
         ownerId: user.id,
         ownerName: user.fullName || user.username
@@ -54,7 +57,7 @@ function Workspaces() {
 
     if (window.confirm('Are you sure you want to delete this workspace? This action cannot be undone.')) {
       try {
-        await axios.delete(`/api/workspaces/${workspaceId}?userId=${user.id}`);
+        await axios.delete(`${API_BASE}/api/workspaces/${workspaceId}?userId=${user.id}`);
         fetchWorkspaces();
       } catch (error) {
         console.error('Error deleting workspace:', error);

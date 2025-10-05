@@ -1,120 +1,130 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './Dashboard.css';
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
+const StatCard = ({ icon, iconClass, value, label }) => (
+  <div className="stat-card">
+    <div className={`stat-icon ${iconClass}`}>{icon}</div>
+    <div className="stat-content">
+      <h3 className="stat-value">{value || 0}</h3>
+      <p className="stat-label">{label}</p>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ message, linkTo, ctaText }) => (
+  <div className="empty-state">
+    <p>{message}</p>
+    <Link to={linkTo} className="btn btn-primary">{ctaText}</Link>
+  </div>
+);
+
 function Dashboard() {
-  const { user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
+  
+  // Component State
   const [stats, setStats] = useState(null);
   const [recentSnippets, setRecentSnippets] = useState([]);
   const [recentWorkspaces, setRecentWorkspaces] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [user]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async (userId) => {
+    setIsLoadingData(true);
     try {
-      const response = await axios.get(`/api/dashboard?userId=${user.id}`);
+      const response = await axios.get(`${API_BASE}/api/dashboard`, {
+        params: { userId },
+      });
       setStats(response.data.stats);
       setRecentSnippets(response.data.recentSnippets);
       setRecentWorkspaces(response.data.recentWorkspaces);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
-      setLoading(false);
+      setIsLoadingData(false);
     }
-  };
+  }, []); 
 
-  if (loading) {
+  useEffect(() => {
+  
+    if (!isLoaded) {
+      return;
+    }
+
+    if (isSignedIn && user?.id) {
+      fetchDashboardData(user.id);
+    } else if (isLoaded && !isSignedIn) {
+      setIsLoadingData(false);
+    }
+  }, [isLoaded, isSignedIn, user?.id, fetchDashboardData]);
+
+  if (!isLoaded || isLoadingData) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading dashboard...</p>
+        <p>{!isLoaded ? 'Authenticating user...' : 'Loading dashboard data...'}</p>
       </div>
     );
   }
 
+  if (!isSignedIn) {
+    return (
+      <div className="dashboard-error loading-container">
+        <h1 className="page-title">Access Denied 🛑</h1>
+        <p className="page-subtitle">Please sign in to view your dashboard.</p>
+        <Link to="/sign-in" className="btn btn-primary">Go to Sign In</Link>
+      </div>
+    );
+  }
+
+  const displayName = user?.firstName || user?.username || 'user';
+
   return (
     <div className="dashboard">
+      {/* Header Section */}
       <div className="dashboard-header">
         <div>
-          <h1 className="page-title">Welcome back, {user?.firstName || user?.username}!</h1>
+          <h1 className="page-title">Welcome back, {displayName}!</h1>
           <p className="page-subtitle">Here's an overview of your activity</p>
         </div>
       </div>
 
+      {/* Stats Grid Section */}
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-primary">📝</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats?.totalSnippets || 0}</h3>
-            <p className="stat-label">Total Snippets</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-success">🔓</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats?.publicSnippets || 0}</h3>
-            <p className="stat-label">Public Snippets</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-warning">🔒</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats?.privateSnippets || 0}</h3>
-            <p className="stat-label">Private Snippets</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-info">💼</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats?.totalWorkspaces || 0}</h3>
-            <p className="stat-label">Total Workspaces</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-primary">👑</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats?.ownedWorkspaces || 0}</h3>
-            <p className="stat-label">Owned Workspaces</p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon stat-icon-secondary">🤝</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats?.collaboratingWorkspaces || 0}</h3>
-            <p className="stat-label">Collaborating</p>
-          </div>
-        </div>
+        <StatCard icon="📝" iconClass="stat-icon-primary" value={stats?.totalSnippets} label="Total Snippets" />
+        <StatCard icon="🔓" iconClass="stat-icon-success" value={stats?.publicSnippets} label="Public Snippets" />
+        <StatCard icon="🔒" iconClass="stat-icon-warning" value={stats?.privateSnippets} label="Private Snippets" />
+        <StatCard icon="💼" iconClass="stat-icon-info" value={stats?.totalWorkspaces} label="Total Workspaces" />
+        <StatCard icon="👑" iconClass="stat-icon-primary" value={stats?.ownedWorkspaces} label="Owned Workspaces" />
+        <StatCard icon="🤝" iconClass="stat-icon-secondary" value={stats?.collaboratingWorkspaces} label="Collaborating" />
       </div>
 
+      {/* Content Section: Recent Snippets & Workspaces */}
       <div className="dashboard-content">
+        {/* Recent Snippets Section */}
         <div className="recent-section">
           <div className="section-header">
-            <h2 className="section-title">Recent Snippets</h2>
+            <h2 className="section-title">Recent Snippets 📝</h2>
             <Link to="/snippets" className="section-link">View all →</Link>
           </div>
           <div className="recent-list">
             {recentSnippets.length === 0 ? (
-              <div className="empty-state">
-                <p>No snippets yet</p>
-                <Link to="/snippets" className="btn btn-primary">Create your first snippet</Link>
-              </div>
+              <EmptyState
+                message="Time to save some code! Create your first snippet."
+                linkTo="/snippets/new"
+                ctaText="Create Snippet"
+              />
             ) : (
               recentSnippets.map(snippet => (
-                <Link key={snippet._id} to="/snippets" className="recent-item">
+                // FIX: Link should go to the individual snippet page
+                <Link key={snippet._id} to={`/snippets/${snippet._id}`} className="recent-item">
                   <div className="recent-item-content">
                     <h3 className="recent-item-title">{snippet.title}</h3>
                     <p className="recent-item-meta">
-                      {snippet.language} • {snippet.isPublic ? '🔓 Public' : '🔒 Private'}
+                      {snippet.language} &bull; {snippet.isPublic ? '🔓 Public' : '🔒 Private'}
                     </p>
                   </div>
                   <span className="recent-item-date">
@@ -126,24 +136,26 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* Recent Workspaces Section */}
         <div className="recent-section">
           <div className="section-header">
-            <h2 className="section-title">Recent Workspaces</h2>
+            <h2 className="section-title">Recent Workspaces 💼</h2>
             <Link to="/workspaces" className="section-link">View all →</Link>
           </div>
           <div className="recent-list">
             {recentWorkspaces.length === 0 ? (
-              <div className="empty-state">
-                <p>No workspaces yet</p>
-                <Link to="/workspaces" className="btn btn-primary">Create your first workspace</Link>
-              </div>
+              <EmptyState
+                message="Start collaborating! Create or join a workspace."
+                linkTo="/workspaces/new"
+                ctaText="Create Workspace"
+              />
             ) : (
               recentWorkspaces.map(workspace => (
                 <Link key={workspace._id} to={`/workspace/${workspace.workspaceId}`} className="recent-item">
                   <div className="recent-item-content">
                     <h3 className="recent-item-title">{workspace.name}</h3>
                     <p className="recent-item-meta">
-                      {workspace.ownerId === user.id ? '👑 Owner' : '🤝 Collaborator'} • {workspace.collaborators.length} members
+                      {workspace.ownerId === user.id ? '👑 Owner' : '🤝 Collaborator'} &bull; {workspace.collaborators.length} members
                     </p>
                   </div>
                   <span className="recent-item-date">

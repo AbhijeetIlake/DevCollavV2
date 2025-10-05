@@ -4,6 +4,8 @@ import axios from 'axios';
 import Editor from '@monaco-editor/react';
 import './Snippets.css';
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 function Snippets() {
   const { user } = useUser();
   const [snippets, setSnippets] = useState([]);
@@ -17,7 +19,7 @@ function Snippets() {
     title: '',
     description: '',
     code: '',
-    language: 'javascript',
+    lang: 'javascript',
     isPublic: false,
     tags: []
   });
@@ -32,7 +34,7 @@ function Snippets() {
 
   const fetchSnippets = async () => {
     try {
-      const response = await axios.get(`/api/snippets?userId=${user.id}`);
+      const response = await axios.get(`${API_BASE}/api/snippets?userId=${user.id}`);
       setSnippets(response.data);
     } catch (error) {
       console.error('Error fetching snippets:', error);
@@ -54,7 +56,7 @@ function Snippets() {
       filtered = filtered.filter(s =>
         s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.language.toLowerCase().includes(searchTerm.toLowerCase())
+        s.lang.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -65,9 +67,9 @@ function Snippets() {
     e.preventDefault();
     try {
       if (editingSnippet) {
-        await axios.put(`/api/snippets/${editingSnippet._id}`, formData);
+        await axios.put(`${API_BASE}/api/snippets/${editingSnippet._id}`, formData);
       } else {
-        await axios.post('/api/snippets', {
+        await axios.post(`${API_BASE}/api/snippets`, {
           ...formData,
           userId: user.id
         });
@@ -82,7 +84,7 @@ function Snippets() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this snippet?')) {
       try {
-        await axios.delete(`/api/snippets/${id}?userId=${user.id}`);
+        await axios.delete(`${API_BASE}/api/snippets/${id}?userId=${user.id}`);
         fetchSnippets();
       } catch (error) {
         console.error('Error deleting snippet:', error);
@@ -106,7 +108,7 @@ function Snippets() {
         title: snippet.title,
         description: snippet.description,
         code: snippet.code,
-        language: snippet.language,
+        lang: snippet.lang,
         isPublic: snippet.isPublic,
         tags: snippet.tags
       });
@@ -116,7 +118,7 @@ function Snippets() {
         title: '',
         description: '',
         code: '',
-        language: 'javascript',
+        lang: 'javascript',
         isPublic: false,
         tags: []
       });
@@ -201,7 +203,7 @@ function Snippets() {
                 <p className="snippet-description">{snippet.description}</p>
               )}
               <div className="snippet-meta">
-                <span className="badge badge-primary">{snippet.language}</span>
+                <span className="badge badge-primary">{snippet.lang}</span>
                 <span className="snippet-date">
                   {new Date(snippet.updatedAt).toLocaleDateString()}
                 </span>
@@ -255,8 +257,8 @@ function Snippets() {
                     <label className="label">Language</label>
                     <select
                       className="select"
-                      value={formData.language}
-                      onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                      value={formData.lang}
+                      onChange={(e) => setFormData({ ...formData, lang: e.target.value })}
                     >
                       <option value="javascript">JavaScript</option>
                       <option value="python">Python</option>
@@ -288,7 +290,7 @@ function Snippets() {
                   <div className="editor-container">
                     <Editor
                       height="300px"
-                      language={formData.language}
+                      language={formData.lang}
                       value={formData.code}
                       onChange={(value) => setFormData({ ...formData, code: value || '' })}
                       theme="vs-dark"

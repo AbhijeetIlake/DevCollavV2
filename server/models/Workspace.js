@@ -49,7 +49,7 @@ const workspaceSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
-    language: {
+    lang: {
       type: String,
       default: 'javascript'
     },
@@ -70,6 +70,11 @@ const workspaceSchema = new mongoose.Schema({
 
 workspaceSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  next();
+});
+
+workspaceSchema.pre('findOneAndUpdate', function(next) {
+  this.set({ updatedAt: Date.now() });
   next();
 });
 
