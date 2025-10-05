@@ -129,6 +129,44 @@ function Snippets() {
   const closeModal = () => {
     setShowModal(false);
     setEditingSnippet(null);
+    setCodeOutput('');
+    setShowOutput(false);
+  };
+
+  const handleRunCode = () => {
+    setShowOutput(true);
+    setCodeOutput('Running code...');
+
+    if (formData.language !== 'javascript') {
+      setCodeOutput('⚠️ Code execution is currently only supported for JavaScript.');
+      return;
+    }
+
+    try {
+      const logs = [];
+      const originalLog = console.log;
+      console.log = (...args) => {
+        logs.push(args.map(arg =>
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' '));
+      };
+
+      try {
+        const result = eval(formData.code);
+        console.log = originalLog;
+
+        let output = logs.join('\n');
+        if (result !== undefined) {
+          output += (output ? '\n\n' : '') + '→ ' + (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result));
+        }
+        setCodeOutput(output || '✓ Code executed successfully (no output)');
+      } catch (err) {
+        console.log = originalLog;
+        setCodeOutput('❌ Error: ' + err.message);
+      }
+    } catch (err) {
+      setCodeOutput('❌ Execution Error: ' + err.message);
+    }
   };
 
   if (loading) {
@@ -257,8 +295,8 @@ function Snippets() {
                     <label className="label">Language</label>
                     <select
                       className="select"
-                      value={formData.lang}
-                      onChange={(e) => setFormData({ ...formData, lang: e.target.value })}
+                      value={formData.language}
+                      onChange={(e) => setFormData({ ...formData, language: e.target.value })}
                     >
                       <option value="javascript">JavaScript</option>
                       <option value="python">Python</option>
@@ -290,7 +328,7 @@ function Snippets() {
                   <div className="editor-container">
                     <Editor
                       height="300px"
-                      language={formData.lang}
+                      language={formData.language}
                       value={formData.code}
                       onChange={(value) => setFormData({ ...formData, code: value || '' })}
                       theme="vs-dark"
@@ -304,11 +342,24 @@ function Snippets() {
                     />
                   </div>
                 </div>
+                {showOutput && (
+                  <div className="form-group">
+                    <label className="label">Output</label>
+                    <div className="code-output">
+                      <pre>{codeOutput}</pre>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={closeModal}>
                   Cancel
                 </button>
+                {formData.language === 'javascript' && (
+                  <button type="button" className="btn btn-secondary" onClick={handleRunCode}>
+                    ▶ Run Code
+                  </button>
+                )}
                 <button type="submit" className="btn btn-primary">
                   {editingSnippet ? 'Update' : 'Create'}
                 </button>
