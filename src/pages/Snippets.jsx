@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
-import axios from 'axios';
-import Editor from '@monaco-editor/react';
-import './Snippets.css';
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
+import axios from "axios";
+import Editor from "@monaco-editor/react";
+import "./Snippets.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -13,17 +13,17 @@ function Snippets() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingSnippet, setEditingSnippet] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
   const [showOutput, setShowOutput] = useState(false);
-  const [codeOutput, setCodeOutput] = useState('');
+  const [codeOutput, setCodeOutput] = useState("");
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    code: '',
-    lang: 'javascript',
+    title: "",
+    description: "",
+    code: "",
+    lang: "javascript",
     isPublic: false,
-    tags: []
+    tags: [],
   });
 
   useEffect(() => {
@@ -36,10 +36,12 @@ function Snippets() {
 
   const fetchSnippets = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/snippets?userId=${user.id}`);
+      const response = await axios.get(
+        `${API_BASE}/api/snippets?userId=${user.id}`
+      );
       setSnippets(response.data);
     } catch (error) {
-      console.error('Error fetching snippets:', error);
+      console.error("Error fetching snippets:", error);
     } finally {
       setLoading(false);
     }
@@ -48,58 +50,71 @@ function Snippets() {
   const filterSnippets = () => {
     let filtered = snippets;
 
-    if (filterType === 'public') {
-      filtered = filtered.filter(s => s.isPublic);
-    } else if (filterType === 'private') {
-      filtered = filtered.filter(s => !s.isPublic);
-    }
+    if (filterType === "public") filtered = filtered.filter((s) => s.isPublic);
+    else if (filterType === "private")
+      filtered = filtered.filter((s) => !s.isPublic);
 
     if (searchTerm) {
-      filtered = filtered.filter(s =>
-        s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.lang.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (s) =>
+          s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          s.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          s.lang.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     setFilteredSnippets(filtered);
   };
 
+  // ✅ Corrected handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) return alert("User not logged in!");
+
+    const payload = {
+      userId: user.id,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      code: formData.code,
+      lang: formData.lang,
+      isPublic: Boolean(formData.isPublic),
+      tags: formData.tags.map((tag) => tag.trim()).filter((tag) => tag),
+    };
+
     try {
       if (editingSnippet) {
-        await axios.put(`${API_BASE}/api/snippets/${editingSnippet._id}`, formData);
+        await axios.put(
+          `${API_BASE}/api/snippets/${editingSnippet._id}`,
+          payload
+        );
       } else {
-        await axios.post(`${API_BASE}/api/snippets`, {
-          ...formData,
-          userId: user.id
-        });
+        await axios.post(`${API_BASE}/api/snippets`, payload);
       }
       fetchSnippets();
       closeModal();
     } catch (error) {
-      console.error('Error saving snippet:', error);
+      console.error("Error saving snippet:", error);
+      alert("Failed to save snippet. Check console for details.");
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this snippet?')) {
-      try {
-        await axios.delete(`${API_BASE}/api/snippets/${id}?userId=${user.id}`);
-        fetchSnippets();
-      } catch (error) {
-        console.error('Error deleting snippet:', error);
-      }
+    if (!window.confirm("Are you sure you want to delete this snippet?"))
+      return;
+    try {
+      await axios.delete(`${API_BASE}/api/snippets/${id}?userId=${user.id}`);
+      fetchSnippets();
+    } catch (error) {
+      console.error("Error deleting snippet:", error);
     }
   };
 
   const handleCopy = async (code) => {
     try {
       await navigator.clipboard.writeText(code);
-      alert('Code copied to clipboard!');
+      alert("Code copied to clipboard!");
     } catch (error) {
-      console.error('Error copying code:', error);
+      console.error("Error copying code:", error);
     }
   };
 
@@ -112,37 +127,39 @@ function Snippets() {
         code: snippet.code,
         lang: snippet.lang,
         isPublic: snippet.isPublic,
-        tags: snippet.tags || []
+        tags: snippet.tags || [],
       });
     } else {
       setEditingSnippet(null);
       setFormData({
-        title: '',
-        description: '',
-        code: '',
-        lang: 'javascript',
+        title: "",
+        description: "",
+        code: "",
+        lang: "javascript",
         isPublic: false,
-        tags: []
+        tags: [],
       });
     }
     setShowOutput(false);
-    setCodeOutput('');
+    setCodeOutput("");
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditingSnippet(null);
-    setCodeOutput('');
+    setCodeOutput("");
     setShowOutput(false);
   };
 
   const handleRunCode = () => {
     setShowOutput(true);
-    setCodeOutput('Running code...');
+    setCodeOutput("Running code...");
 
-    if (formData.lang !== 'javascript') {
-      setCodeOutput('⚠️ Code execution is currently only supported for JavaScript.');
+    if (formData.lang !== "javascript") {
+      setCodeOutput(
+        "⚠️ Code execution is currently only supported for JavaScript."
+      );
       return;
     }
 
@@ -152,27 +169,34 @@ function Snippets() {
       console.log = (...args) => {
         logs.push(
           args
-            .map(arg => (typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)))
-            .join(' ')
+            .map((arg) =>
+              typeof arg === "object"
+                ? JSON.stringify(arg, null, 2)
+                : String(arg)
+            )
+            .join(" ")
         );
       };
 
       try {
         const result = eval(formData.code);
         console.log = originalLog;
-
-        let output = logs.join('\n');
+        let output = logs.join("\n");
         if (result !== undefined) {
-          output += (output ? '\n\n' : '') + '→ ' +
-            (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result));
+          output +=
+            (output ? "\n\n" : "") +
+            "→ " +
+            (typeof result === "object"
+              ? JSON.stringify(result, null, 2)
+              : String(result));
         }
-        setCodeOutput(output || '✓ Code executed successfully (no output)');
+        setCodeOutput(output || "✓ Code executed successfully (no output)");
       } catch (err) {
         console.log = originalLog;
-        setCodeOutput('❌ Error: ' + err.message);
+        setCodeOutput("❌ Error: " + err.message);
       }
     } catch (err) {
-      setCodeOutput('❌ Execution Error: ' + err.message);
+      setCodeOutput("❌ Execution Error: " + err.message);
     }
   };
 
@@ -207,20 +231,26 @@ function Snippets() {
         />
         <div className="filter-buttons">
           <button
-            className={`btn ${filterType === 'all' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setFilterType('all')}
+            className={`btn ${
+              filterType === "all" ? "btn-primary" : "btn-outline"
+            }`}
+            onClick={() => setFilterType("all")}
           >
             All
           </button>
           <button
-            className={`btn ${filterType === 'public' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setFilterType('public')}
+            className={`btn ${
+              filterType === "public" ? "btn-primary" : "btn-outline"
+            }`}
+            onClick={() => setFilterType("public")}
           >
             Public
           </button>
           <button
-            className={`btn ${filterType === 'private' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setFilterType('private')}
+            className={`btn ${
+              filterType === "private" ? "btn-primary" : "btn-outline"
+            }`}
+            onClick={() => setFilterType("private")}
           >
             Private
           </button>
@@ -236,12 +266,16 @@ function Snippets() {
             </button>
           </div>
         ) : (
-          filteredSnippets.map(snippet => (
+          filteredSnippets.map((snippet) => (
             <div key={snippet._id} className="snippet-card">
               <div className="snippet-header">
                 <h3 className="snippet-title">{snippet.title}</h3>
-                <span className={`badge ${snippet.isPublic ? 'badge-success' : 'badge-warning'}`}>
-                  {snippet.isPublic ? '🔓 Public' : '🔒 Private'}
+                <span
+                  className={`badge ${
+                    snippet.isPublic ? "badge-success" : "badge-warning"
+                  }`}
+                >
+                  {snippet.isPublic ? "🔓 Public" : "🔒 Private"}
                 </span>
               </div>
               {snippet.description && (
@@ -254,13 +288,22 @@ function Snippets() {
                 </span>
               </div>
               <div className="snippet-actions">
-                <button className="btn btn-secondary" onClick={() => handleCopy(snippet.code)}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => handleCopy(snippet.code)}
+                >
                   Copy
                 </button>
-                <button className="btn btn-outline" onClick={() => openModal(snippet)}>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => openModal(snippet)}
+                >
                   Edit
                 </button>
-                <button className="btn btn-danger" onClick={() => handleDelete(snippet._id)}>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(snippet._id)}
+                >
                   Delete
                 </button>
               </div>
@@ -271,10 +314,13 @@ function Snippets() {
 
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal modal-large"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2 className="modal-title">
-                {editingSnippet ? 'Edit Snippet' : 'Create New Snippet'}
+                {editingSnippet ? "Edit Snippet" : "Create New Snippet"}
               </h2>
             </div>
             <form onSubmit={handleSubmit}>
@@ -285,7 +331,9 @@ function Snippets() {
                     type="text"
                     className="input"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -294,7 +342,24 @@ function Snippets() {
                   <textarea
                     className="textarea"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">Tags (comma separated)</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.tags.join(", ")}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        tags: e.target.value.split(","),
+                      })
+                    }
+                    placeholder="tag1, tag2, tag3"
                   />
                 </div>
                 <div className="form-row">
@@ -303,7 +368,9 @@ function Snippets() {
                     <select
                       className="select"
                       value={formData.lang}
-                      onChange={(e) => setFormData({ ...formData, lang: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lang: e.target.value })
+                      }
                     >
                       <option value="javascript">JavaScript</option>
                       <option value="python">Python</option>
@@ -323,7 +390,12 @@ function Snippets() {
                     <select
                       className="select"
                       value={formData.isPublic}
-                      onChange={(e) => setFormData({ ...formData, isPublic: e.target.value === 'true' })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isPublic: e.target.value === "true",
+                        })
+                      }
                     >
                       <option value="false">Private</option>
                       <option value="true">Public</option>
@@ -337,12 +409,14 @@ function Snippets() {
                       height="300px"
                       language={formData.lang}
                       value={formData.code}
-                      onChange={(value) => setFormData({ ...formData, code: value || '' })}
+                      onChange={(value) =>
+                        setFormData({ ...formData, code: value || "" })
+                      }
                       theme="vs-dark"
                       options={{
                         minimap: { enabled: false },
                         fontSize: 14,
-                        lineNumbers: 'on',
+                        lineNumbers: "on",
                         roundedSelection: true,
                         scrollBeyondLastLine: false,
                       }}
@@ -359,16 +433,24 @@ function Snippets() {
                 )}
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={closeModal}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={closeModal}
+                >
                   Cancel
                 </button>
-                {formData.lang === 'javascript' && (
-                  <button type="button" className="btn btn-secondary" onClick={handleRunCode}>
+                {formData.lang === "javascript" && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleRunCode}
+                  >
                     ▶ Run Code
                   </button>
                 )}
                 <button type="submit" className="btn btn-primary">
-                  {editingSnippet ? 'Update' : 'Create'}
+                  {editingSnippet ? "Update" : "Create"}
                 </button>
               </div>
             </form>

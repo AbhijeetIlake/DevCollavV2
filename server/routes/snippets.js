@@ -39,11 +39,28 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const snippet = new Snippet(req.body);
+    const { userId, title, code, lang, isPublic, description = '', tags = [] } = req.body;
+
+    // Validate required fields
+    if (!userId || !title || !code) {
+      return res.status(400).json({ error: 'Missing required fields: userId, title, or code' });
+    }
+
+    const snippet = new Snippet({
+      userId,
+      title,
+      description,
+      code,
+      lang: lang || 'javascript',
+      isPublic: Boolean(isPublic),
+      tags: Array.isArray(tags) ? tags : []
+    });
+
     await snippet.save();
     res.status(201).json(snippet);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error saving snippet:', error);
+    res.status(500).json({ error: 'Backend error while saving snippet' });
   }
 });
 
