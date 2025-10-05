@@ -3,18 +3,21 @@ import Snippet from '../models/Snippet.js';
 
 const router = express.Router();
 
+// GET /api/snippets
 router.get('/', async (req, res) => {
   try {
     const { userId, isPublic } = req.query;
     let query = {};
 
-    if (userId) {
-      query.userId = userId;
-    }
-
     if (isPublic === 'true') {
+      // Public filter: only public snippets
       query.isPublic = true;
+    } else if (isPublic === 'false' && userId) {
+      // Private filter: only current user's private snippets
+      query.userId = userId;
+      query.isPublic = false;
     } else if (userId) {
+      // All filter: current user's private + all public
       query.$or = [{ userId }, { isPublic: true }];
     }
 
@@ -25,23 +28,22 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/snippets/:id
 router.get('/:id', async (req, res) => {
   try {
     const snippet = await Snippet.findById(req.params.id);
-    if (!snippet) {
-      return res.status(404).json({ error: 'Snippet not found' });
-    }
+    if (!snippet) return res.status(404).json({ error: 'Snippet not found' });
     res.json(snippet);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+// POST /api/snippets
 router.post('/', async (req, res) => {
   try {
     const { userId, title, code, lang, isPublic, description = '', tags = [] } = req.body;
 
-    // Validate required fields
     if (!userId || !title || !code) {
       return res.status(400).json({ error: 'Missing required fields: userId, title, or code' });
     }
@@ -53,7 +55,7 @@ router.post('/', async (req, res) => {
       code,
       lang: lang || 'javascript',
       isPublic: Boolean(isPublic),
-      tags: Array.isArray(tags) ? tags : []
+      tags: Array.isArray(tags) ? tags : [],
     });
 
     await snippet.save();
@@ -64,34 +66,29 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/snippets/:id
 router.put('/:id', async (req, res) => {
   try {
-    const snippet = await Snippet.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!snippet) {
-      return res.status(404).json({ error: 'Snippet not found' });
-    }
+    const snippet = await Snippet.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!snippet) return res.status(404).json({ error: 'Snippet not found' });
     res.json(snippet);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
+// DELETE /api/snippets/:id
 router.delete('/:id', async (req, res) => {
   try {
     const { userId } = req.query;
     const snippet = await Snippet.findById(req.params.id);
 
-    if (!snippet) {
-      return res.status(404).json({ error: 'Snippet not found' });
-    }
-
-    if (snippet.userId !== userId) {
-      return res.status(403).json({ error: 'Unauthorized to delete this snippet' });
-    }
+    if (!snippet) return res.status(404).json({ error: 'Snippet not found' });
+    if (snippet.userId !== userId) return res.status(403).json({ error: 'Unauthorized to delete this snippet' });
 
     await Snippet.findByIdAndDelete(req.params.id);
     res.json({ message: 'Snippet deleted successfully' });
