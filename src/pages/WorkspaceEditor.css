@@ -264,18 +264,6 @@
   color: var(--text-primary);
 }
 
-/* .badge {
-  padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.badge-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  color: #fff;
-} */
 
 .badge-secondary {
   background: var(--bg-hover);
