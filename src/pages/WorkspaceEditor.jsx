@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
+import { FaSave, FaCopy, FaCrown, FaFile } from 'react-icons/fa';
+import { FaDeleteLeft } from 'react-icons/fa6';
 import Editor from '@monaco-editor/react';
 import { io } from 'socket.io-client';
 import axios from 'axios';
 import './WorkspaceEditor.css';
+import { TbLogout2 } from 'react-icons/tb';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -183,16 +186,16 @@ function WorkspaceEditor() {
           </div>
 
           <button className="btn btn-secondary" onClick={handleCopyInviteLink}>
-            📋 Copy Invite Link
+            <FaCopy /> Copy Invite Link
           </button>
 
           <button className="btn btn-primary" onClick={() => setShowSnippetModal(true)}>
-            💾 Save Snippet
+            <FaSave /> Save File
           </button>
 
           {!isOwner && (
             <button className="btn btn-danger" onClick={handleLeaveWorkspace}>
-              🚪 Leave Workspace
+              <TbLogout2 /> Leave Workspace
             </button>
           )}
         </div>
@@ -225,10 +228,10 @@ function WorkspaceEditor() {
 
           {/* Snippets */}
           <div className="sidebar-section">
-            <h3 className="sidebar-title">Workspace Snippets</h3>
+            <h3 className="sidebar-title">Workspace Files</h3>
             <div className="snippets-list">
               {workspace.snippets.length === 0 ? (
-                <p className="empty-text">No snippets saved</p>
+                <p className="empty-text">No Files saved</p>
               ) : (
                 workspace.snippets.map((snippet) => (
                   <div key={snippet._id} className="snippet-item">
@@ -242,14 +245,14 @@ function WorkspaceEditor() {
                         onClick={() => handleLoadSnippet(snippet)}
                         title="Load snippet"
                       >
-                        📂
+                        <FaFile />
                       </button>
                       <button
                         className="icon-btn"
                         onClick={() => handleDeleteSnippet(snippet._id)}
                         title="Delete snippet"
                       >
-                        🗑️
+                        <FaDeleteLeft />
                       </button>
                     </div>
                   </div>
@@ -264,7 +267,7 @@ function WorkspaceEditor() {
             <div className="members-list">
               <div className="member-item">
                 <span className="member-name">{workspace.ownerName}</span>
-                <span className="badge badge-primary">👑 Owner</span>
+                <span className="badge badge-primary"><FaCrown/> Owner</span>
               </div>
               {workspace.collaborators.map((collab, i) => (
                 <div key={i} className="member-item">
@@ -304,18 +307,18 @@ function WorkspaceEditor() {
         <div className="modal-overlay" onClick={() => setShowSnippetModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Save Snippet</h2>
+              <h2 className="modal-title">Save File</h2>
             </div>
             <form onSubmit={handleSaveSnippet}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label className="label">Snippet Title</label>
+                  <label className="label">File Title</label>
                   <input
                     type="text"
                     className="input"
                     value={snippetTitle}
                     onChange={(e) => setSnippetTitle(e.target.value)}
-                    placeholder="My awesome function"
+                    placeholder="e.g. index.js"
                     required
                   />
                 </div>

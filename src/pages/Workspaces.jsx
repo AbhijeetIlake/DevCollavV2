@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { AiFillSnippets } from "react-icons/ai";
+import { FcCollaboration } from "react-icons/fc";
 import axios from 'axios';
 import './Workspaces.css';
+import { MdJoinInner } from 'react-icons/md';
 
 const API_BASE = import.meta.env.VITE_API_URL; 
 
@@ -116,7 +119,7 @@ function Workspaces() {
         </div>
         <div className="workspace-my-btn">
           <button className="btn btn-primary" onClick={openModal}>+ New Workspace</button>
-          <button className="btn btn-secondary" onClick={openJoinModal}>🔗 Join Workspace</button>
+          <button className="btn btn-secondary" onClick={openJoinModal}><MdJoinInner /> Join Workspace</button>
         </div>
       </div>
 
@@ -140,8 +143,8 @@ function Workspaces() {
               {ws.description && <p className="workspace-description">{ws.description}</p>}
               <div className="workspace-meta">
                 <div className="workspace-info">
-                  <span className="workspace-stat">👥 {ws.collaborators.length + 1} members</span>
-                  <span className="workspace-stat">📝 {ws.snippets.length} snippets</span>
+                  <span className="workspace-stat"><FcCollaboration/> {ws.collaborators.length + 1} members</span>
+                  <span className="workspace-stat"><AiFillSnippets /> {ws.snippets.length} snippets</span>
                 </div>
                 <span className="workspace-date">{new Date(ws.updatedAt).toLocaleDateString()}</span>
               </div>

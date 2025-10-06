@@ -1,6 +1,9 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import "./Layout.css";
+import { BsPersonWorkspace } from 'react-icons/bs';
+import { AiFillSnippets } from 'react-icons/ai';
+import { LuLayoutDashboard } from 'react-icons/lu';
 
 const NavItem = ({ to, icon, children }) => {
   const location = useLocation();
@@ -55,13 +58,13 @@ function Layout() {
         </div>
 
         <nav className="nav">
-          <NavItem to="/" icon="📈">
+          <NavItem to="/" icon={<LuLayoutDashboard />}>
             Dashboard
           </NavItem>
-          <NavItem to="/snippets" icon="📝">
+          <NavItem to="/snippets" icon={<AiFillSnippets />}>
             Snippets
           </NavItem>
-          <NavItem to="/workspaces" icon="💼">
+          <NavItem to="/workspaces" icon={<BsPersonWorkspace />}>
             Workspaces
           </NavItem>
         </nav>

@@ -228,18 +228,16 @@
 }
 
 .icon-btn {
-  background: var(--bg-hover);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 16px;
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 18px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .icon-btn:hover {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* --- Members --- */
@@ -263,7 +261,6 @@
   font-size: 14px;
   color: var(--text-primary);
 }
-
 
 .badge-secondary {
   background: var(--bg-hover);

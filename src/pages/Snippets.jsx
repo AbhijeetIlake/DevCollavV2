@@ -34,7 +34,6 @@ function Snippets() {
       if (filter === "public") query = "?isPublic=true";
       else if (filter === "private")
         query = `?userId=${user.id}&isPublic=false`;
-      // "all" is handled by backend to return public + current user's private
 
       const response = await axios.get(`${API_BASE}/api/snippets${query}`);
       setSnippets(response.data);
@@ -49,12 +48,15 @@ function Snippets() {
     if (user) fetchSnippets(filterType);
   }, [user]);
 
-  const filteredSnippets = snippets.filter(
-    (s) =>
-      s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.lang.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSnippets = snippets.filter((s) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      s.title.toLowerCase().includes(search) ||
+      s.description.toLowerCase().includes(search) ||
+      s.lang.toLowerCase().includes(search) ||
+      (s.tags && s.tags.some((tag) => tag.toLowerCase().includes(search)))
+    );
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -265,24 +267,37 @@ function Snippets() {
           filteredSnippets.map((snippet) => (
             <div key={snippet._id} className="snippet-card">
               <div className="snippet-header">
-                <h3 className="snippet-title">{snippet.title}</h3>
-                <span
+                <div className="snippet-header-top">
+                  <h3 className="snippet-title">
+                    {snippet.title}
+                    <span className="snippet-date">
+                      {" "}
+                      • {new Date(snippet.updatedAt).toLocaleDateString()}
+                    </span>
+                  </h3>
+                  <span
                   className={`badge ${
                     snippet.isPublic ? "badge-success" : "badge-warning"
                   }`}
                 >
                   {snippet.isPublic ? "🔓 Public" : "🔒 Private"}
                 </span>
+                </div>
+
+                <div className="snippet-tags">
+                  {snippet.tags &&
+                    snippet.tags.map((tag, idx) => (
+                      <span key={idx} className="snippet-tag">
+                        #{tag}
+                      </span>
+                    ))}
+                </div>
               </div>
+
               {snippet.description && (
                 <p className="snippet-description">{snippet.description}</p>
               )}
-              <div className="snippet-meta">
-                <span className="badge badge-primary">{snippet.lang}</span>
-                <span className="snippet-date">
-                  {new Date(snippet.updatedAt).toLocaleDateString()}
-                </span>
-              </div>
+
               <div className="snippet-actions">
                 <button
                   className="btn btn-secondary"
@@ -433,6 +448,7 @@ function Snippets() {
                     </select>
                   </div>
                 </div>
+
                 <div className="form-group">
                   <label className="label">Code</label>
                   <div className="editor-container">
@@ -454,6 +470,7 @@ function Snippets() {
                     />
                   </div>
                 </div>
+
                 {showOutput && (
                   <div className="form-group">
                     <label className="label">Output</label>
@@ -463,6 +480,7 @@ function Snippets() {
                   </div>
                 )}
               </div>
+
               <div className="modal-footer">
                 <button
                   type="button"

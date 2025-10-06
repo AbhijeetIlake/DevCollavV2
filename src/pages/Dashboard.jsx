@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@clerk/clerk-react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import './Dashboard.css';
+import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import "./Dashboard.css";
+import { AiFillSnippets } from "react-icons/ai";
+import { FaLock, FaLockOpen, FaCrown } from "react-icons/fa";
+import { BsPersonWorkspace } from "react-icons/bs";
+import { FcCollaboration } from "react-icons/fc";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -19,13 +23,15 @@ const StatCard = ({ icon, iconClass, value, label }) => (
 const EmptyState = ({ message, linkTo, ctaText }) => (
   <div className="empty-state">
     <p>{message}</p>
-    <Link to={linkTo} className="btn btn-primary">{ctaText}</Link>
+    <Link to={linkTo} className="btn btn-primary">
+      {ctaText}
+    </Link>
   </div>
 );
 
 function Dashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
-  
+
   // Component State
   const [stats, setStats] = useState(null);
   const [recentSnippets, setRecentSnippets] = useState([]);
@@ -42,14 +48,13 @@ function Dashboard() {
       setRecentSnippets(response.data.recentSnippets);
       setRecentWorkspaces(response.data.recentWorkspaces);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setIsLoadingData(false);
     }
-  }, []); 
+  }, []);
 
   useEffect(() => {
-  
     if (!isLoaded) {
       return;
     }
@@ -65,7 +70,9 @@ function Dashboard() {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>{!isLoaded ? 'Authenticating user...' : 'Loading dashboard data...'}</p>
+        <p>
+          {!isLoaded ? "Authenticating user..." : "Loading dashboard data..."}
+        </p>
       </div>
     );
   }
@@ -75,12 +82,14 @@ function Dashboard() {
       <div className="dashboard-error loading-container">
         <h1 className="page-title">Access Denied 🛑</h1>
         <p className="page-subtitle">Please sign in to view your dashboard.</p>
-        <Link to="/sign-in" className="btn btn-primary">Go to Sign In</Link>
+        <Link to="/sign-in" className="btn btn-primary">
+          Go to Sign In
+        </Link>
       </div>
     );
   }
 
-  const displayName = user?.firstName || user?.username || 'user';
+  const displayName = user?.firstName || user?.username || "user";
 
   return (
     <div className="dashboard">
@@ -94,12 +103,42 @@ function Dashboard() {
 
       {/* Stats Grid Section */}
       <div className="stats-grid">
-        <StatCard icon="📝" iconClass="stat-icon-primary" value={stats?.totalSnippets} label="Total Snippets" />
-        <StatCard icon="🔓" iconClass="stat-icon-success" value={stats?.publicSnippets} label="Public Snippets" />
-        <StatCard icon="🔒" iconClass="stat-icon-warning" value={stats?.privateSnippets} label="Private Snippets" />
-        <StatCard icon="💼" iconClass="stat-icon-info" value={stats?.totalWorkspaces} label="Total Workspaces" />
-        <StatCard icon="👑" iconClass="stat-icon-primary" value={stats?.ownedWorkspaces} label="Owned Workspaces" />
-        <StatCard icon="🤝" iconClass="stat-icon-secondary" value={stats?.collaboratingWorkspaces} label="Collaborating" />
+        <StatCard
+          icon={<AiFillSnippets />}
+          iconClass="stat-icon-primary"
+          value={stats?.totalSnippets}
+          label="Total Snippets"
+        />
+        <StatCard
+          icon={<FaLockOpen />}
+          iconClass="stat-icon-success"
+          value={stats?.publicSnippets}
+          label="Public Snippets"
+        />
+        <StatCard
+          icon={<FaLock />}
+          iconClass="stat-icon-warning"
+          value={stats?.privateSnippets}
+          label="Private Snippets"
+        />
+        <StatCard
+          icon={<BsPersonWorkspace />}
+          iconClass="stat-icon-info"
+          value={stats?.totalWorkspaces}
+          label="Total Workspaces"
+        />
+        <StatCard
+          icon={<FaCrown />}
+          iconClass="stat-icon-primary"
+          value={stats?.ownedWorkspaces}
+          label="Owned Workspaces"
+        />
+        <StatCard
+          icon={<FcCollaboration />}
+          iconClass="stat-icon-secondary"
+          value={stats?.collaboratingWorkspaces}
+          label="Collaborating"
+        />
       </div>
 
       {/* Content Section: Recent Snippets & Workspaces */}
@@ -107,8 +146,12 @@ function Dashboard() {
         {/* Recent Snippets Section */}
         <div className="recent-section">
           <div className="section-header">
-            <h2 className="section-title">Recent Snippets 📝</h2>
-            <Link to="/snippets" className="section-link">View all →</Link>
+            <h2 className="section-title">
+              Recent Snippets <AiFillSnippets />
+            </h2>
+            <Link to="/snippets" className="section-link">
+              View all →
+            </Link>
           </div>
           <div className="recent-list">
             {recentSnippets.length === 0 ? (
@@ -118,13 +161,18 @@ function Dashboard() {
                 ctaText="Create Snippet"
               />
             ) : (
-              recentSnippets.map(snippet => (
+              recentSnippets.map((snippet) => (
                 // FIX: Link should go to the individual snippet page
-                <Link key={snippet._id} to={`/snippets/${snippet._id}`} className="recent-item">
+                <Link
+                  key={snippet._id}
+                  to={`/snippets/${snippet._id}`}
+                  className="recent-item"
+                >
                   <div className="recent-item-content">
                     <h3 className="recent-item-title">{snippet.title}</h3>
                     <p className="recent-item-meta">
-                      {snippet.language} &bull; {snippet.isPublic ? '🔓 Public' : '🔒 Private'}
+                      {snippet.language} &bull;{" "}
+                      {snippet.isPublic ? "🔓 Public" : "🔒 Private"}
                     </p>
                   </div>
                   <span className="recent-item-date">
@@ -139,8 +187,12 @@ function Dashboard() {
         {/* Recent Workspaces Section */}
         <div className="recent-section">
           <div className="section-header">
-            <h2 className="section-title">Recent Workspaces 💼</h2>
-            <Link to="/workspaces" className="section-link">View all →</Link>
+            <h2 className="section-title">
+              Recent Workspaces {<BsPersonWorkspace />}{" "}
+            </h2>
+            <Link to="/workspaces" className="section-link">
+              View all →
+            </Link>
           </div>
           <div className="recent-list">
             {recentWorkspaces.length === 0 ? (
@@ -150,12 +202,19 @@ function Dashboard() {
                 ctaText="Create Workspace"
               />
             ) : (
-              recentWorkspaces.map(workspace => (
-                <Link key={workspace._id} to={`/workspace/${workspace.workspaceId}`} className="recent-item">
+              recentWorkspaces.map((workspace) => (
+                <Link
+                  key={workspace._id}
+                  to={`/workspace/${workspace.workspaceId}`}
+                  className="recent-item"
+                >
                   <div className="recent-item-content">
                     <h3 className="recent-item-title">{workspace.name}</h3>
                     <p className="recent-item-meta">
-                      {workspace.ownerId === user.id ? '👑 Owner' : '🤝 Collaborator'} &bull; {workspace.collaborators.length} members
+                      {workspace.ownerId === user.id
+                        ? "👑 Owner"
+                        : "🤝 Collaborator"}{" "}
+                      &bull; {workspace.collaborators.length} members
                     </p>
                   </div>
                   <span className="recent-item-date">
