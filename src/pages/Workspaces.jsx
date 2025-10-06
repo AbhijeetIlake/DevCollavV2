@@ -114,7 +114,7 @@ function Workspaces() {
           <h1 className="page-title">Workspaces</h1>
           <p className="page-subtitle">Collaborate with your team in real-time</p>
         </div>
-        <div>
+        <div className="workspace-my-btn">
           <button className="btn btn-primary" onClick={openModal}>+ New Workspace</button>
           <button className="btn btn-secondary" onClick={openJoinModal}>🔗 Join Workspace</button>
         </div>

@@ -85,7 +85,8 @@
 }
 
 .workspace-info {
-  flex: 1;
+  display: flex;
+  gap: 20px;
 }
 
 .workspace-title {
@@ -185,6 +186,10 @@
   animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
+.workspace-my-btn {
+  display: flex;
+  gap: 20px;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);

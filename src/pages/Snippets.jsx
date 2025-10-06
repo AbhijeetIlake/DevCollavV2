@@ -32,7 +32,8 @@ function Snippets() {
     try {
       let query = `?userId=${user.id}`;
       if (filter === "public") query = "?isPublic=true";
-      else if (filter === "private") query = `?userId=${user.id}&isPublic=false`;
+      else if (filter === "private")
+        query = `?userId=${user.id}&isPublic=false`;
       // "all" is handled by backend to return public + current user's private
 
       const response = await axios.get(`${API_BASE}/api/snippets${query}`);
@@ -71,7 +72,10 @@ function Snippets() {
 
     try {
       if (editingSnippet) {
-        await axios.put(`${API_BASE}/api/snippets/${editingSnippet._id}`, payload);
+        await axios.put(
+          `${API_BASE}/api/snippets/${editingSnippet._id}`,
+          payload
+        );
       } else {
         await axios.post(`${API_BASE}/api/snippets`, payload);
       }
@@ -84,7 +88,8 @@ function Snippets() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this snippet?")) return;
+    if (!window.confirm("Are you sure you want to delete this snippet?"))
+      return;
     try {
       await axios.delete(`${API_BASE}/api/snippets/${id}?userId=${user.id}`);
       fetchSnippets(filterType);
@@ -141,7 +146,9 @@ function Snippets() {
     setCodeOutput("Running code...");
 
     if (formData.lang !== "javascript") {
-      setCodeOutput("⚠️ Code execution is currently only supported for JavaScript.");
+      setCodeOutput(
+        "⚠️ Code execution is currently only supported for JavaScript."
+      );
       return;
     }
 
@@ -149,7 +156,13 @@ function Snippets() {
       const logs = [];
       const originalLog = console.log;
       console.log = (...args) => {
-        logs.push(args.map((a) => (typeof a === "object" ? JSON.stringify(a, null, 2) : String(a))).join(" "));
+        logs.push(
+          args
+            .map((a) =>
+              typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)
+            )
+            .join(" ")
+        );
       };
 
       try {
@@ -157,7 +170,12 @@ function Snippets() {
         console.log = originalLog;
         let output = logs.join("\n");
         if (result !== undefined) {
-          output += (output ? "\n\n" : "") + "→ " + (typeof result === "object" ? JSON.stringify(result, null, 2) : String(result));
+          output +=
+            (output ? "\n\n" : "") +
+            "→ " +
+            (typeof result === "object"
+              ? JSON.stringify(result, null, 2)
+              : String(result));
         }
         setCodeOutput(output || "✓ Code executed successfully (no output)");
       } catch (err) {
@@ -194,26 +212,41 @@ function Snippets() {
         <input
           type="text"
           placeholder="Search snippets..."
-          className="input search-input"
+          className="input search-input my-input"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <div className="filter-buttons">
+        <div className="filter-buttons my-snippet-filter-button">
           <button
-            className={`btn ${filterType === "all" ? "btn-primary" : "btn-outline"}`}
-            onClick={() => { setFilterType("all"); fetchSnippets("all"); }}
+            className={`btn ${
+              filterType === "all" ? "btn-primary" : "btn-outline"
+            }`}
+            onClick={() => {
+              setFilterType("all");
+              fetchSnippets("all");
+            }}
           >
             All
           </button>
           <button
-            className={`btn ${filterType === "public" ? "btn-primary" : "btn-outline"}`}
-            onClick={() => { setFilterType("public"); fetchSnippets("public"); }}
+            className={`btn ${
+              filterType === "public" ? "btn-primary" : "btn-outline"
+            }`}
+            onClick={() => {
+              setFilterType("public");
+              fetchSnippets("public");
+            }}
           >
             Public
           </button>
           <button
-            className={`btn ${filterType === "private" ? "btn-primary" : "btn-outline"}`}
-            onClick={() => { setFilterType("private"); fetchSnippets("private"); }}
+            className={`btn ${
+              filterType === "private" ? "btn-primary" : "btn-outline"
+            }`}
+            onClick={() => {
+              setFilterType("private");
+              fetchSnippets("private");
+            }}
           >
             Private
           </button>
@@ -233,23 +266,40 @@ function Snippets() {
             <div key={snippet._id} className="snippet-card">
               <div className="snippet-header">
                 <h3 className="snippet-title">{snippet.title}</h3>
-                <span className={`badge ${snippet.isPublic ? "badge-success" : "badge-warning"}`}>
+                <span
+                  className={`badge ${
+                    snippet.isPublic ? "badge-success" : "badge-warning"
+                  }`}
+                >
                   {snippet.isPublic ? "🔓 Public" : "🔒 Private"}
                 </span>
               </div>
-              {snippet.description && <p className="snippet-description">{snippet.description}</p>}
+              {snippet.description && (
+                <p className="snippet-description">{snippet.description}</p>
+              )}
               <div className="snippet-meta">
                 <span className="badge badge-primary">{snippet.lang}</span>
-                <span className="snippet-date">{new Date(snippet.updatedAt).toLocaleDateString()}</span>
+                <span className="snippet-date">
+                  {new Date(snippet.updatedAt).toLocaleDateString()}
+                </span>
               </div>
               <div className="snippet-actions">
-                <button className="btn btn-secondary" onClick={() => handleCopy(snippet.code)}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => handleCopy(snippet.code)}
+                >
                   Copy
                 </button>
-                <button className="btn btn-outline" onClick={() => openModal(snippet)}>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => openModal(snippet)}
+                >
                   Edit
                 </button>
-                <button className="btn btn-danger" onClick={() => handleDelete(snippet._id)}>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(snippet._id)}
+                >
                   Delete
                 </button>
               </div>
@@ -260,34 +310,99 @@ function Snippets() {
 
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal modal-large"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h2 className="modal-title">{editingSnippet ? "Edit Snippet" : "Create New Snippet"}</h2>
+              <h2 className="modal-title">
+                {editingSnippet ? "Edit Snippet" : "Create New Snippet"}
+              </h2>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="form-group">
                   <label className="label">Title</label>
-                  <input type="text" className="input" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label className="label">Description</label>
-                  <textarea className="textarea" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
-                </div>
-                <div className="form-group">
-                  <label className="label">Tags (comma separated)</label>
                   <input
                     type="text"
                     className="input"
-                    value={formData.tags.join(", ")}
-                    onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(",") })}
-                    placeholder="tag1, tag2, tag3"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                    required
                   />
                 </div>
+                <div className="form-group">
+                  <label className="label">Description</label>
+                  <textarea
+                    className="textarea"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="label">
+                    Tags (press Enter or comma to add)
+                  </label>
+                  <div className="tags-input-container">
+                    <div className="tags-list">
+                      {formData.tags.map((tag, index) => (
+                        <span key={index} className="tag-item">
+                          {tag}
+                          <button
+                            type="button"
+                            className="remove-tag-btn"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                tags: formData.tags.filter(
+                                  (_, i) => i !== index
+                                ),
+                              })
+                            }
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      className="input tag-input"
+                      placeholder="Add tag..."
+                      onKeyDown={(e) => {
+                        if (
+                          (e.key === "Enter" || e.key === ",") &&
+                          e.target.value.trim()
+                        ) {
+                          e.preventDefault();
+                          const newTag = e.target.value.trim();
+                          if (!formData.tags.includes(newTag)) {
+                            setFormData({
+                              ...formData,
+                              tags: [...formData.tags, newTag],
+                            });
+                          }
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="label">Language</label>
-                    <select className="select" value={formData.lang} onChange={(e) => setFormData({ ...formData, lang: e.target.value })}>
+                    <select
+                      className="select"
+                      value={formData.lang}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lang: e.target.value })
+                      }
+                    >
                       <option value="javascript">JavaScript</option>
                       <option value="python">Python</option>
                       <option value="java">Java</option>
@@ -303,7 +418,16 @@ function Snippets() {
                   </div>
                   <div className="form-group">
                     <label className="label">Visibility</label>
-                    <select className="select" value={formData.isPublic} onChange={(e) => setFormData({ ...formData, isPublic: e.target.value === "true" })}>
+                    <select
+                      className="select"
+                      value={formData.isPublic}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isPublic: e.target.value === "true",
+                        })
+                      }
+                    >
                       <option value="false">Private</option>
                       <option value="true">Public</option>
                     </select>
@@ -316,9 +440,17 @@ function Snippets() {
                       height="300px"
                       language={formData.lang}
                       value={formData.code}
-                      onChange={(value) => setFormData({ ...formData, code: value || "" })}
+                      onChange={(value) =>
+                        setFormData({ ...formData, code: value || "" })
+                      }
                       theme="vs-dark"
-                      options={{ minimap: { enabled: false }, fontSize: 14, lineNumbers: "on", roundedSelection: true, scrollBeyondLastLine: false }}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        lineNumbers: "on",
+                        roundedSelection: true,
+                        scrollBeyondLastLine: false,
+                      }}
                     />
                   </div>
                 </div>
@@ -332,11 +464,19 @@ function Snippets() {
                 )}
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={closeModal}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={closeModal}
+                >
                   Cancel
                 </button>
                 {formData.lang === "javascript" && (
-                  <button type="button" className="btn btn-secondary" onClick={handleRunCode}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleRunCode}
+                  >
                     ▶ Run Code
                   </button>
                 )}
