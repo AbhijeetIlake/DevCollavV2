@@ -17,9 +17,7 @@ function WorkspaceEditor() {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [connectedUsers, setConnectedUsers] = useState([]);
-  const [showInviteModal, setShowInviteModal] = useState(false);
   const [showSnippetModal, setShowSnippetModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
   const [snippetTitle, setSnippetTitle] = useState('');
   const socketRef = useRef(null);
   const editorRef = useRef(null);
@@ -36,10 +34,15 @@ function WorkspaceEditor() {
     };
   }, [workspaceId, user]);
 
+  // ----------------------------
+  // Fetch workspace data
+  // ----------------------------
   const fetchWorkspace = async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/workspaces/${workspaceId}`);
       setWorkspace(response.data);
+      setCode(response.data.currentCode || '');
+      setLanguage(response.data.language || 'javascript');
     } catch (error) {
       console.error('Error fetching workspace:', error);
       alert('Workspace not found');
@@ -49,21 +52,29 @@ function WorkspaceEditor() {
     }
   };
 
+  // ----------------------------
+  // Initialize Socket.IO
+  // ----------------------------
   const initializeSocket = () => {
-    socketRef.current = io('http://localhost:3001');
+    socketRef.current = io(API_BASE, {
+      transports: ['websocket'],
+      reconnectionAttempts: 5,
+    });
 
     socketRef.current.on('connect', () => {
       socketRef.current.emit('join-workspace', {
         workspaceId,
         userId: user.id,
-        username: user.fullName || user.username
+        username: user.fullName || user.username,
       });
     });
 
+    // Update connected users
     socketRef.current.on('users-update', (users) => {
       setConnectedUsers(users);
     });
 
+    // Receive code updates from other collaborators
     socketRef.current.on('content-update', (content) => {
       setCode(content);
     });
@@ -73,30 +84,29 @@ function WorkspaceEditor() {
     });
   };
 
+  // ----------------------------
+  // Handle editor changes
+  // ----------------------------
   const handleEditorChange = (value) => {
     setCode(value || '');
     if (socketRef.current) {
       socketRef.current.emit('code-change', {
         workspaceId,
-        content: value || ''
+        content: value || '',
       });
     }
   };
 
-  const handleInviteCollaborator = async (e) => {
-    e.preventDefault();
-    alert('Invite functionality requires integration with user management. Share the workspace URL with your collaborator.');
-    setShowInviteModal(false);
-    setInviteEmail('');
-  };
-
+  // ----------------------------
+  // Save snippet
+  // ----------------------------
   const handleSaveSnippet = async (e) => {
     e.preventDefault();
     try {
       await axios.post(`${API_BASE}/api/workspaces/${workspaceId}/snippets`, {
         title: snippetTitle,
         code: code,
-        language: language
+        language: language,
       });
       fetchWorkspace();
       setShowSnippetModal(false);
@@ -108,40 +118,17 @@ function WorkspaceEditor() {
     }
   };
 
+  // ----------------------------
+  // Load snippet
+  // ----------------------------
   const handleLoadSnippet = (snippet) => {
     setCode(snippet.code);
     setLanguage(snippet.language);
-  };
-
-  const handleDeleteSnippet = async (snippetId) => {
-    if (window.confirm('Are you sure you want to delete this snippet?')) {
-      try {
-        await axios.delete(`${API_BASE}/api/workspaces/${workspaceId}/snippets/${snippetId}`);
-        fetchWorkspace();
-      } catch (error) {
-        console.error('Error deleting snippet:', error);
-      }
-    }
-  };
-
-  const handleCopyInviteLink = () => {
-    const inviteLink = `${window.location.origin}/workspace/${workspaceId}`;
-    navigator.clipboard.writeText(inviteLink);
-    alert('Invite link copied to clipboard!');
-  };
-
-  const handleLeaveWorkspace = async () => {
-    if (!window.confirm('Are you sure you want to leave this workspace? You will lose access to all workspace content.')) {
-      return;
-    }
-
-    try {
-      await axios.delete(`/api/workspaces/${workspaceId}/collaborators/${user.id}`);
-      alert('You have left the workspace successfully');
-      navigate('/workspaces');
-    } catch (error) {
-      console.error('Error leaving workspace:', error);
-      alert(error.response?.data?.error || 'Error leaving workspace. Please try again.');
+    if (socketRef.current) {
+      socketRef.current.emit('code-change', {
+        workspaceId,
+        content: snippet.code,
+      });
     }
   };
 
@@ -154,14 +141,13 @@ function WorkspaceEditor() {
     );
   }
 
-  if (!workspace) {
-    return null;
-  }
+  if (!workspace) return null;
 
   const isOwner = workspace.ownerId === user.id;
 
   return (
     <div className="workspace-editor">
+      {/* Editor Header */}
       <div className="editor-header">
         <div className="header-left">
           <button className="btn btn-outline back-btn" onClick={() => navigate('/workspaces')}>
@@ -183,20 +169,10 @@ function WorkspaceEditor() {
               ))}
             </div>
           </div>
-          <button className="btn btn-secondary" onClick={handleCopyInviteLink}>
-            📋 Copy Invite Link
-          </button>
-          <button className="btn btn-primary" onClick={() => setShowSnippetModal(true)}>
-            💾 Save Snippet
-          </button>
-          {!isOwner && (
-            <button className="btn btn-danger" onClick={handleLeaveWorkspace}>
-              🚪 Leave Workspace
-            </button>
-          )}
         </div>
       </div>
 
+      {/* Editor and Sidebar */}
       <div className="editor-container-main">
         <div className="editor-sidebar">
           <div className="sidebar-section">
@@ -226,7 +202,7 @@ function WorkspaceEditor() {
               {workspace.snippets.length === 0 ? (
                 <p className="empty-text">No snippets saved</p>
               ) : (
-                workspace.snippets.map(snippet => (
+                workspace.snippets.map((snippet) => (
                   <div key={snippet._id} className="snippet-item">
                     <div className="snippet-item-content">
                       <h4 className="snippet-item-title">{snippet.title}</h4>
@@ -240,33 +216,10 @@ function WorkspaceEditor() {
                       >
                         📂
                       </button>
-                      <button
-                        className="icon-btn"
-                        onClick={() => handleDeleteSnippet(snippet._id)}
-                        title="Delete snippet"
-                      >
-                        🗑️
-                      </button>
                     </div>
                   </div>
                 ))
               )}
-            </div>
-          </div>
-
-          <div className="sidebar-section">
-            <h3 className="sidebar-title">Members</h3>
-            <div className="members-list">
-              <div className="member-item">
-                <span className="member-name">{workspace.ownerName}</span>
-                <span className="badge badge-primary">👑 Owner</span>
-              </div>
-              {workspace.collaborators.map((collab, index) => (
-                <div key={index} className="member-item">
-                  <span className="member-name">{collab.username}</span>
-                  <span className="badge badge-secondary">Collaborator</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -294,42 +247,6 @@ function WorkspaceEditor() {
           </div>
         </div>
       </div>
-
-      {showSnippetModal && (
-        <div className="modal-overlay" onClick={() => setShowSnippetModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Save Snippet</h2>
-            </div>
-            <form onSubmit={handleSaveSnippet}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="label">Snippet Title</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={snippetTitle}
-                    onChange={(e) => setSnippetTitle(e.target.value)}
-                    placeholder="My awesome function"
-                    required
-                  />
-                </div>
-                <p className="helper-text">
-                  This will save the current code to this workspace's snippets.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={() => setShowSnippetModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

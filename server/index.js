@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import snippetRoutes from './routes/snippets.js';
 import workspaceRoutes from './routes/workspaces.js';
 import dashboardRoutes from './routes/dashboard.js';
+import Workspace from './models/Workspace.js';
 
 dotenv.config();
 
@@ -39,12 +40,13 @@ app.use('/api/dashboard', dashboardRoutes);
 // Socket.IO logic
 // -------------------
 const workspaceUsers = new Map();
-const workspaceContent = new Map();
+const workspaceContent = new Map(); // in-memory current code per workspace
+const workspaceLanguage = new Map(); // in-memory current language per workspace
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join-workspace', ({ workspaceId, userId, username }) => {
+  socket.on('join-workspace', async ({ workspaceId, userId, username }) => {
     socket.join(workspaceId);
 
     if (!workspaceUsers.has(workspaceId)) {
@@ -55,16 +57,41 @@ io.on('connection', (socket) => {
     const users = Array.from(workspaceUsers.get(workspaceId).values());
     io.to(workspaceId).emit('users-update', users);
 
-    if (workspaceContent.has(workspaceId)) {
-      socket.emit('content-update', workspaceContent.get(workspaceId));
+    // Initialize in-memory code and language if first user
+    if (!workspaceContent.has(workspaceId)) {
+      try {
+        const workspace = await Workspace.findOne({ workspaceId });
+        if (workspace && workspace.snippets.length > 0) {
+          const lastSnippet = workspace.snippets[workspace.snippets.length - 1];
+          workspaceContent.set(workspaceId, lastSnippet.code || '');
+          workspaceLanguage.set(workspaceId, lastSnippet.lang || 'javascript');
+        } else {
+          workspaceContent.set(workspaceId, '');
+          workspaceLanguage.set(workspaceId, 'javascript');
+        }
+      } catch (err) {
+        console.error('Error fetching workspace:', err);
+        workspaceContent.set(workspaceId, '');
+        workspaceLanguage.set(workspaceId, 'javascript');
+      }
     }
+
+    // Send current code and language to newly joined user
+    socket.emit('content-update', workspaceContent.get(workspaceId));
+    socket.emit('language-update', workspaceLanguage.get(workspaceId));
 
     console.log(`User ${username} joined workspace ${workspaceId}`);
   });
 
-  socket.on('code-change', ({ workspaceId, content }) => {
+  socket.on('code-change', ({ workspaceId, content, language }) => {
     workspaceContent.set(workspaceId, content);
+    if (language) workspaceLanguage.set(workspaceId, language);
+
+    // Broadcast to others
     socket.to(workspaceId).emit('content-update', content);
+
+    // Optional: update latest snippet in DB (can be expensive for every keystroke)
+    // You could save periodically instead.
   });
 
   socket.on('cursor-move', ({ workspaceId, position, userId }) => {
