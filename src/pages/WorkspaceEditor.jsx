@@ -130,6 +130,21 @@ function WorkspaceEditor() {
     alert('Invite link copied to clipboard!');
   };
 
+  const handleLeaveWorkspace = async () => {
+    if (!window.confirm('Are you sure you want to leave this workspace? You will lose access to all workspace content.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/workspaces/${workspaceId}/collaborators/${user.id}`);
+      alert('You have left the workspace successfully');
+      navigate('/workspaces');
+    } catch (error) {
+      console.error('Error leaving workspace:', error);
+      alert(error.response?.data?.error || 'Error leaving workspace. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -174,6 +189,11 @@ function WorkspaceEditor() {
           <button className="btn btn-primary" onClick={() => setShowSnippetModal(true)}>
             💾 Save Snippet
           </button>
+          {!isOwner && (
+            <button className="btn btn-danger" onClick={handleLeaveWorkspace}>
+              🚪 Leave Workspace
+            </button>
+          )}
         </div>
       </div>
 
