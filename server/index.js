@@ -6,14 +6,12 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
 import snippetRoutes from './routes/snippets.js';
 import workspaceRoutes from './routes/workspaces.js';
 import dashboardRoutes from './routes/dashboard.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -24,12 +22,10 @@ const io = new Server(httpServer, {
   }
 });
 
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
+// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch((err) => console.error('MongoDB connection error:', err));
@@ -39,15 +35,9 @@ app.use('/api/snippets', snippetRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Serve Vite frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
-  });
-}
-
+// -------------------
 // Socket.IO logic
+// -------------------
 const workspaceUsers = new Map();
 const workspaceContent = new Map();
 
@@ -102,7 +92,23 @@ io.on('connection', (socket) => {
   });
 });
 
+// -------------------
+// Serve React static files
+// -------------------
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DIST_DIR = path.join(__dirname, '../dist');
+app.use(express.static(DIST_DIR));
+
+// SPA catch-all
+app.get('*', (req, res) => {
+  res.sendFile(path.join(DIST_DIR, 'index.html'));
+});
+
+// -------------------
 // Start server
+// -------------------
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
